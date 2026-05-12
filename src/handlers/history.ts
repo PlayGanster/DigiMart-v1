@@ -26,7 +26,7 @@ export async function showPurchaseHistory(ctx: MyContext, page = 1) {
     take: HISTORY_PAGE_SIZE,
     include: {
       product: { select: { name: true } },
-      review: { select: { rating: true, comment: true } },
+      review: { select: { rating: true, comment: true, isApproved: true } },
     },
   });
 
@@ -40,7 +40,7 @@ export async function showPurchaseHistory(ctx: MyContext, page = 1) {
         p.product.name
       }</b>\n`;
       text += `   💰 ${p.priceAtPurchase}₽ | 📅 ${date}\n`;
-      if (p.review) {
+      if (p.review && p.review.isApproved) {
         text += `   ⭐ ${p.review.rating}/5`;
         if (p.review.comment) text += ` — "${p.review.comment}"`;
         text += '\n';

@@ -18,6 +18,7 @@ import { setupHistoryHandlers } from './handlers/history.js';
 import { moderationReasonConversation } from './handlers/admin.js';
 import { setupMagazineSettingsHandlers, editMagazineConversation } from './handlers/magazine_settings.js';
 import { setupStatisticsHandlers } from './handlers/statistics.js';
+import { setupReviewModerationHandlers } from './handlers/reviewModeration.js';
 import {
   buyHandler,
   historyHandler,
@@ -52,6 +53,7 @@ setupPurchaseHandlers(bot);
 setupHistoryHandlers(bot);
 setupMagazineSettingsHandlers(bot);
 setupStatisticsHandlers(bot);
+setupReviewModerationHandlers(bot);
 
 bot.use(async (ctx, next) => {
   const now = new Date().toISOString();

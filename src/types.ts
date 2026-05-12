@@ -9,6 +9,9 @@ export interface SessionData {
     productId: number;
     action: 'reject' | 'revise';
   };
+  tempReviewModeration?: {
+    reviewId: number;
+  };
   reviewData?: {
     purchaseId: number;
     productId: number;
