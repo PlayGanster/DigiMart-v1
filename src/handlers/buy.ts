@@ -164,7 +164,7 @@ export async function showCatalog(ctx: MyContext, state: FilterState) {
   }
 
   // Кнопка "В главное меню"
-  keyboard.row().text('🏠 Главное меню', 'menu_back');
+  keyboard.row().text('🏠 Главное меню', 'menu_main');
 
   const opts = { reply_markup: keyboard, parse_mode: 'HTML' as const };
   

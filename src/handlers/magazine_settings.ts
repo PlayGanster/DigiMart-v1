@@ -96,7 +96,7 @@ export function setupMagazineSettingsHandlers(bot: Bot<MyContext>) {
   });
 
   // Кнопка «Назад» из настроек возвращает в главное меню
-  bot.callbackQuery('menu_back', async (ctx) => {
+  bot.callbackQuery('menu_main', async (ctx) => {
     await ctx.answerCallbackQuery();
     await sendMainMenu(ctx);
   });

@@ -4,6 +4,7 @@ import { MyContext } from '../types.js';
 /**
  * Универсальная функция для отправки/редактирования сообщения
  * Если есть callbackQuery.message - редактируем, иначе отправляем новое
+ * Всегда старается редактировать существующее сообщение для избежания спама
  */
 export async function sendOrEditMessage(
   ctx: MyContext,
@@ -82,6 +83,19 @@ export async function tryDeleteMessage(ctx: MyContext) {
   try {
     if (ctx.callbackQuery?.message) {
       await ctx.deleteMessage();
+    }
+  } catch {
+    // Игнорируем ошибки
+  }
+}
+
+/**
+ * Обновить только клавиатуру сообщения
+ */
+export async function updateKeyboard(ctx: MyContext, keyboard: any) {
+  try {
+    if (ctx.callbackQuery?.message) {
+      await ctx.editMessageReplyMarkup(keyboard);
     }
   } catch {
     // Игнорируем ошибки

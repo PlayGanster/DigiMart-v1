@@ -14,5 +14,5 @@ export function settingsKeyboard(isActive: boolean): InlineKeyboard {
     .row()
     .text('✏️ Редактировать инфо', 'magazine:edit_info')
     .row()
-    .text('🔙 Назад', 'menu_back'); // вернём в главное меню
+    .text('🔙 Назад', 'menu_main'); // вернём в главное меню
 }

@@ -1,8 +1,12 @@
 // src/utils/menu.ts
 import { MyContext } from '../types.js';
-import { buildMainMenu } from '../keyboards/main.js';
 import prisma from '../prisma.js';
+import { buildMainMenu } from '../keyboards/main.js';
 
+/**
+ * Отправляет или редактирует главное меню
+ * Использует редактирование сообщения для избежания спама
+ */
 export async function sendMainMenu(ctx: MyContext) {
   const userId = ctx.from?.id;
   if (!userId) return;
@@ -15,16 +19,32 @@ export async function sendMainMenu(ctx: MyContext) {
       include: { magazine: true },
     });
     const photoFileId = user?.magazine?.photoFileId;
+    const text = '👋 Добро пожаловать в DigiMart!\n\nВыберите действие:';
 
-    if (photoFileId) {
-      await ctx.replyWithPhoto(photoFileId, {
-        caption: 'Добро пожаловать в DigiMart!',
-        reply_markup: keyboard,
-      });
+    // Пытаемся отредактировать текущее сообщение
+    if (ctx.callbackQuery?.message) {
+      await ctx.editMessageText(text, { reply_markup: keyboard });
     } else {
-      await ctx.reply('Добро пожаловать в DigiMart!', { reply_markup: keyboard });
+      // Отправляем новое сообщение
+      if (photoFileId) {
+        await ctx.replyWithPhoto(photoFileId, { caption: text, reply_markup: keyboard });
+      } else {
+        await ctx.reply(text, { reply_markup: keyboard });
+      }
     }
   } catch {
-    await ctx.reply('Добро пожаловать в DigiMart!', { reply_markup: keyboard });
+    // Если редактирование не удалось, отправляем новое
+    const user = await prisma.user.findUnique({
+      where: { tgId: userId },
+      include: { magazine: true },
+    });
+    const photoFileId = user?.magazine?.photoFileId;
+    const text = '👋 Добро пожаловать в DigiMart!\n\nВыберите действие:';
+
+    if (photoFileId) {
+      await ctx.replyWithPhoto(photoFileId, { caption: text, reply_markup: keyboard });
+    } else {
+      await ctx.reply(text, { reply_markup: keyboard });
+    }
   }
 }
