@@ -11,6 +11,12 @@ import { showPurchaseHistory } from './history.js';
 import { showSettings } from './magazine_settings.js';
 import { showStatistics } from './statistics.js';
 
+// Обработчик кнопки "Главное меню" - теперь это универсальная кнопка возврата
+export const mainMenuHandler = async (ctx: MyContext) => {
+  await ctx.answerCallbackQuery();
+  await sendMainMenu(ctx);
+};
+
 export const buyHandler = async (ctx: MyContext) => {
   await ctx.answerCallbackQuery();
   await showCatalog(ctx, { page: 1 });
@@ -23,7 +29,16 @@ export const historyHandler = async (ctx: MyContext) => {
 
 export const supportHandler = async (ctx: MyContext) => {
   await ctx.answerCallbackQuery();
-  await ctx.reply('❓ Поддержка: @digimartsupport');
+  // Редактируем сообщение вместо отправки нового
+  try {
+    await ctx.editMessageText('❓ Поддержка: @digimartsupport', {
+      reply_markup: { inline_keyboard: [[{ text: '🏠 Главное меню', callback_data: 'menu_main' }]] }
+    });
+  } catch {
+    await ctx.reply('❓ Поддержка: @digimartsupport', {
+      reply_markup: { inline_keyboard: [[{ text: '🏠 Главное меню', callback_data: 'menu_main' }]] }
+    });
+  }
 };
 
 export const shopSettingsHandler = async (ctx: MyContext) => {
@@ -33,7 +48,7 @@ export const shopSettingsHandler = async (ctx: MyContext) => {
 
 export const myProductsHandler = async (ctx: MyContext) => {
   await ctx.answerCallbackQuery();
-  await showMyProducts(ctx)
+  await showMyProducts(ctx);
 };
 
 export const statsHandler = async (ctx: MyContext) => {
@@ -48,15 +63,8 @@ export const moderationHandler = async (ctx: MyContext) => {
 
 export const reviewModerationHandler = async (ctx: MyContext) => {
   await ctx.answerCallbackQuery();
-  // Импортируем функцию showReviewQueue из reviewModeration.ts
   const { showReviewQueue } = await import('./reviewModeration.js');
   await showReviewQueue(ctx, 1);
-};
-
-export const mainMenuHandler = async (ctx: MyContext) => {
-  await ctx.answerCallbackQuery();
-  const { sendMainMenu } = await import('../utils/menu.js');
-  await sendMainMenu(ctx);
 };
 
 export const resetAccountHandler = async (ctx: MyContext) => {
@@ -71,10 +79,8 @@ export const resetAccountHandler = async (ctx: MyContext) => {
       return;
     }
 
-    // Полное удаление пользователя и всех связанных данных (Cascade)
     await prisma.user.delete({ where: { id: user.id } });
 
-    // Очистка сессии
     ctx.session.userRole = undefined;
     ctx.session.isAdmin = false;
 

@@ -70,7 +70,7 @@ export async function showMyProducts(ctx: MyContext, page = 1) {
   }
   
   keyboard.text('➕ Добавить товар', 'go_add_product');
-  keyboard.row().text('🔙 В главное меню', 'menu_back');
+  keyboard.row().text('🔙 В главное меню', 'menu_main');
   
   await sendOrEditMessage(ctx, text, { parse_mode: 'HTML', reply_markup: keyboard });
 }

@@ -59,7 +59,7 @@ export async function showPurchaseHistory(ctx: MyContext, page = 1) {
   }
   
   // Кнопка "Назад в меню"
-  keyboard.row().text('🔙 В главное меню', 'menu_back');
+  keyboard.row().text('🔙 В главное меню', 'menu_main');
 
   await sendOrEditMessage(ctx, text, { parse_mode: 'HTML', reply_markup: keyboard });
 }

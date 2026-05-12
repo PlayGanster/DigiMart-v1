@@ -94,7 +94,7 @@ export async function showStatistics(ctx: MyContext) {
     text += '\nПока нет данных о продажах.';
   }
 
-  const keyboard = new InlineKeyboard().text('🔙 В главное меню', 'menu_back');
+  const keyboard = new InlineKeyboard().text('🔙 В главное меню', 'menu_main');
   await sendOrEditMessage(ctx, text, { parse_mode: 'HTML', reply_markup: keyboard });
 }
 
