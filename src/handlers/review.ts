@@ -16,6 +16,7 @@ async function leaveReviewConversation(
 
   const { purchaseId, productId, magazineId, productName } = data;
 
+  // Шаг 1: Выбор рейтинга
   const ratingKeyboard = new InlineKeyboard();
   for (let i = 1; i <= 5; i++) {
     ratingKeyboard.text('⭐'.repeat(i), `review:rate_${i}`);
@@ -28,7 +29,13 @@ async function leaveReviewConversation(
   const rateCtx = await conversation.waitForCallbackQuery(/review:rate_(\d)/);
   rating = Number(rateCtx.match?.[1] ?? 5);
   await rateCtx.answerCallbackQuery(`Вы выбрали ${rating} ⭐`);
+  
+  // Удаляем сообщение с рейтингом
+  try {
+    await rateCtx.deleteMessage();
+  } catch {}
 
+  // Шаг 2: Ввод комментария
   await ctx.reply(
     'Напишите отзыв (или нажмите /skip, чтобы пропустить):',
     { reply_markup: { remove_keyboard: true } },
@@ -38,20 +45,30 @@ async function leaveReviewConversation(
   if (commentCtx.message?.text && commentCtx.message.text !== '/skip') {
     comment = commentCtx.message.text.trim().slice(0, 500);
   }
+  
+  // Удаляем сообщение с просьбой ввести комментарий
+  try {
+    await ctx.deleteMessage();
+  } catch {}
 
-  const confirmKeyboard = new InlineKeyboard().text(
-    '📤 Отправить отзыв',
-    'review:submit',
-  );
-  await ctx.reply(
+  // Шаг 3: Подтверждение
+  const confirmKeyboard = new InlineKeyboard()
+    .text('📤 Отправить на модерацию', 'review:submit');
+    
+  const previewText = 
     `Ваш отзыв:\n⭐ ${rating}/5` +
-      (comment ? `\n📝 ${comment}` : '') +
-      '\n\nОтправить?',
-    { reply_markup: confirmKeyboard },
-  );
+    (comment ? `\n📝 ${comment}` : '') +
+    '\n\n⚠️ Отзыв появится после проверки администратором.\n\nОтправить?';
+    
+  await ctx.reply(previewText, { reply_markup: confirmKeyboard });
 
   const submitCtx = await conversation.waitForCallbackQuery('review:submit');
   await submitCtx.answerCallbackQuery();
+  
+  // Удаляем сообщение с подтверждением
+  try {
+    await submitCtx.deleteMessage();
+  } catch {}
 
   const tgId = ctx.from?.id;
   const user = await prisma.user.findUnique({ where: { tgId } });
@@ -74,21 +91,12 @@ async function leaveReviewConversation(
           productId,
           rating,
           comment,
+          isApproved: false, // Требует модерации
         },
-      });
-
-      const agg = await tx.review.aggregate({
-        _avg: { rating: true },
-        where: { magazineId },
-      });
-      const newAvg = agg._avg.rating ?? 0;
-      await tx.magazine.update({
-        where: { id: magazineId },
-        data: { avgRating: Math.round(newAvg * 10) / 10 },
       });
     });
 
-    await ctx.reply('🎉 Спасибо за отзыв! Он поможет другим покупателям.');
+    await ctx.reply('🎉 Спасибо за отзыв! Он появится после проверки администратором.');
   } catch (err: any) {
     if (err.message === 'ALREADY_REVIEWED' || err.code === 'P2002') {
       await ctx.reply('Вы уже оставили отзыв на этот товар.');
