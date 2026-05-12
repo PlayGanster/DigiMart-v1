@@ -1,43 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
-import { config } from './config.js';
+import { Pool } from 'pg';
+import { DATABASE_URL } from './config.js';
 
-const { Pool } = pg;
+// Prisma 5 style: manual adapter instantiation
+const pool = new Pool({ connectionString: DATABASE_URL });
+const adapter = new PrismaPg(pool);
 
-let prismaInstance: PrismaClient | null = null;
+const prisma = new PrismaClient({ adapter });
 
-export function getPrismaClient(): PrismaClient {
-  if (prismaInstance) {
-    return prismaInstance;
-  }
-
-  const pool = new Pool({
-    connectionString: config.databaseUrl,
-  });
-
-  const adapter = new PrismaPg(pool);
-  
-  prismaInstance = new PrismaClient({
-    adapter,
-  });
-
-  return prismaInstance;
-}
-
-export const prisma = getPrismaClient();
-
-// Graceful shutdown
-process.on('beforeExit', async () => {
-  await prismaInstance?.$disconnect();
-});
-
-process.on('SIGINT', async () => {
-  await prismaInstance?.$disconnect();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await prismaInstance?.$disconnect();
-  process.exit(0);
-});
+export default prisma;
