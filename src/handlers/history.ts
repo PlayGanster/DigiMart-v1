@@ -3,6 +3,7 @@ import { InlineKeyboard } from 'grammy';
 import { Bot } from 'grammy';
 import { MyContext } from '../types.js';
 import prisma from '../prisma.js';
+import { sendOrEditMessage } from '../utils/messageManager.js';
 
 const HISTORY_PAGE_SIZE = 5;
 
@@ -56,8 +57,11 @@ export async function showPurchaseHistory(ctx: MyContext, page = 1) {
     keyboard.text(`${page}/${totalPages}`, 'history:noop');
     if (page < totalPages) keyboard.text('➡️', `history:page_${page + 1}`);
   }
+  
+  // Кнопка "Назад в меню"
+  keyboard.row().text('🔙 В главное меню', 'menu_back');
 
-  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+  await sendOrEditMessage(ctx, text, { parse_mode: 'HTML', reply_markup: keyboard });
 }
 
 export function setupHistoryHandlers(bot: Bot<MyContext>) {
@@ -68,6 +72,10 @@ export function setupHistoryHandlers(bot: Bot<MyContext>) {
   bot.callbackQuery(/history:page_(\d+)/, async (ctx) => {
     const page = Number(ctx.match[1]);
     await showPurchaseHistory(ctx, page);
+    await ctx.answerCallbackQuery();
+  });
+  
+  bot.callbackQuery('history:noop', async (ctx) => {
     await ctx.answerCallbackQuery();
   });
 }

@@ -9,19 +9,31 @@ import {
   FilterState,
   encodeFilterState,
 } from '../utils/filterState.js';
+import { sendOrEditMessage } from '../utils/messageManager.js';
 
 const ITEMS_PER_PAGE = 5;
+const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 минут
 
-let categoriesCache: { name: string; slug: string }[] | null = null;
+interface CategoriesCache {
+  data: { name: string; slug: string }[];
+  timestamp: number;
+}
+
+let categoriesCache: CategoriesCache | null = null;
 
 async function getCategories() {
-  if (!categoriesCache) {
-    categoriesCache = await prisma.category.findMany({
-      select: { name: true, slug: true },
-      orderBy: { name: 'asc' },
-    });
+  const now = Date.now();
+  if (categoriesCache && now - categoriesCache.timestamp < CATALOG_CACHE_TTL_MS) {
+    return categoriesCache.data;
   }
-  return categoriesCache;
+
+  const data = await prisma.category.findMany({
+    select: { name: true, slug: true },
+    orderBy: { name: 'asc' },
+  });
+
+  categoriesCache = { data, timestamp: now };
+  return data;
 }
 
 /**
@@ -77,7 +89,8 @@ export async function showCatalog(ctx: MyContext, state: FilterState) {
   let text = '🛒 <b>Каталог товаров</b>\n';
   if (search) text += `🔍 Поиск: "${search}"\n`;
   if (category_slug) {
-    const cat = (await getCategories()).find((c) => c.slug === category_slug);
+    const categories = await getCategories();
+    const cat = categories.find((c) => c.slug === category_slug);
     text += `📂 Категория: ${cat?.name || category_slug}\n`;
   }
   text += `📄 Страница ${page} из ${totalPages}\n`;
@@ -150,16 +163,12 @@ export async function showCatalog(ctx: MyContext, state: FilterState) {
     keyboard.text('➡️', 'catalog:noop');
   }
 
+  // Кнопка "В главное меню"
+  keyboard.row().text('🏠 Главное меню', 'menu_back');
+
   const opts = { reply_markup: keyboard, parse_mode: 'HTML' as const };
-  try {
-    if (ctx.callbackQuery?.message) {
-      await ctx.editMessageText(text, opts);
-    } else {
-      await ctx.reply(text, opts);
-    }
-  } catch {
-    await ctx.reply(text, opts);
-  }
+  
+  await sendOrEditMessage(ctx, text, opts);
 
   if (ctx.callbackQuery) await ctx.answerCallbackQuery();
 }
@@ -211,23 +220,67 @@ export async function showProductCard(
   );
 
   const photos = product.photoFileIds;
-  if (photos.length === 1) {
-    await ctx.replyWithPhoto(photos[0], {
-      caption: text,
-      parse_mode: 'HTML',
-      reply_markup: keyboard,
-    });
-  } else if (photos.length > 1) {
-    const media = photos.map((id, idx) =>
-      InputMediaBuilder.photo(id, {
-        caption: idx === 0 ? text : undefined,
-        parse_mode: 'HTML',
-      }),
-    );
-    await ctx.replyWithMediaGroup(media);
-    await ctx.reply('Выберите действие:', { reply_markup: keyboard });
+  
+  // Используем редактирование вместо отправки новых сообщений
+  if (ctx.callbackQuery?.message) {
+    try {
+      if (photos.length === 1) {
+        await ctx.editMessageMedia(
+          { type: 'photo', media: photos[0], caption: text, parse_mode: 'HTML' },
+          { reply_markup: keyboard }
+        );
+      } else if (photos.length > 1) {
+        const media = photos.map((id, idx) =>
+          InputMediaBuilder.photo(id, {
+            caption: idx === 0 ? text : undefined,
+            parse_mode: 'HTML',
+          }),
+        );
+        await ctx.editMessageMedia(media[0], { reply_markup: keyboard });
+      } else {
+        await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: keyboard });
+      }
+    } catch {
+      // Если редактирование не удалось, отправляем новое сообщение
+      if (photos.length === 1) {
+        await ctx.replyWithPhoto(photos[0], {
+          caption: text,
+          parse_mode: 'HTML',
+          reply_markup: keyboard,
+        });
+      } else if (photos.length > 1) {
+        const media = photos.map((id, idx) =>
+          InputMediaBuilder.photo(id, {
+            caption: idx === 0 ? text : undefined,
+            parse_mode: 'HTML',
+          }),
+        );
+        await ctx.replyWithMediaGroup(media);
+        await ctx.reply('Выберите действие:', { reply_markup: keyboard });
+      } else {
+        await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+      }
+    }
   } else {
-    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+    // Отправляем новое сообщение если нет callbackQuery.message
+    if (photos.length === 1) {
+      await ctx.replyWithPhoto(photos[0], {
+        caption: text,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+    } else if (photos.length > 1) {
+      const media = photos.map((id, idx) =>
+        InputMediaBuilder.photo(id, {
+          caption: idx === 0 ? text : undefined,
+          parse_mode: 'HTML',
+        }),
+      );
+      await ctx.replyWithMediaGroup(media);
+      await ctx.reply('Выберите действие:', { reply_markup: keyboard });
+    } else {
+      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+    }
   }
 
   await ctx.answerCallbackQuery();
