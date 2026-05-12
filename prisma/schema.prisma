@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        BigInt   @id @default(autoincrement())
+  tgId      BigInt   @unique
+  username  String?
+  role      String   @default("USER") // USER, SELLER, ADMIN
+  isBanned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  magazines      Magazine[]
+  purchases      Purchase[]
+  reviews        Review[]
+  payments       Payment[]
+
+  @@index([tgId])
+}
+
+model Magazine {
+  id            BigInt    @id @default(autoincrement())
+  ownerId       BigInt
+  owner         User      @relation(fields: [ownerId], references: [tgId], onDelete: Cascade)
+  name          String
+  description   String?
+  photoFileId   String?
+  isActive      Boolean   @default(true)
+  avgRating     Float     @default(0.0)
+  totalSales    Int       @default(0)
+  totalRevenue  BigInt    @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  products Product[]
+  reviews  Review[]
+  purchases Purchase[]
+
+  @@index([ownerId])
+  @@index([isActive])
+}
+
+model Category {
+  id        BigInt     @id @default(autoincrement())
+  name      String
+  slug      String     @unique
+  parentId  BigInt?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryTree")
+
+  products Product[]
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+model Product {
+  id             BigInt     @id @default(autoincrement())
+  magazineId     BigInt
+  magazine       Magazine   @relation(fields: [magazineId], references: [id], onDelete: Cascade)
+  categoryId     BigInt
+  category       Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name           String
+  description    String
+  price          BigInt     // stored in kopecks/smallest unit
+  stockCount     Int        @default(0)
+  photoFileIds   String[]   // array of file_ids
+  status         String     @default("PENDING") // PENDING, ACTIVE, REJECTED, SOLD_OUT
+  rejectionReason String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  purchases Purchase[]
+  reviews   Review[]
+
+  @@index([magazineId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model Purchase {
+  id            BigInt    @id @default(autoincrement())
+  buyerId       BigInt
+  buyer         User      @relation(fields: [buyerId], references: [tgId], onDelete: Cascade)
+  productId     BigInt
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  magazineId    BigInt
+  magazine      Magazine  @relation(fields: [magazineId], references: [id], onDelete: Cascade)
+  priceAtPurchase BigInt
+  status        String    @default("COMPLETED") // COMPLETED, REFUNDED, DISPUTED
+  createdAt     DateTime  @default(now())
+
+  review Review?
+
+  @@index([buyerId])
+  @@index([productId])
+  @@index([magazineId])
+}
+
+model Review {
+  id         BigInt   @id @default(autoincrement())
+  purchaseId BigInt   @unique
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  reviewerId BigInt
+  reviewer   User     @relation(fields: [reviewerId], references: [tgId], onDelete: Cascade)
+  magazineId BigInt
+  magazine   Magazine @relation(fields: [magazineId], references: [id], onDelete: Cascade)
+  productId  BigInt
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating     Int      // 1-5
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([purchaseId])
+  @@index([magazineId])
+  @@index([productId])
+  @@index([reviewerId])
+}
+
+model Payment {
+  id              BigInt   @id @default(autoincrement())
+  userId          BigInt
+  user            User     @relation(fields: [userId], references: [tgId], onDelete: Cascade)
+  type            String   // SUBSCRIPTION, LISTING_FEE, PREMIUM
+  amount          BigInt
+  status          String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  gatewayOrderId  String?
+  gatewayResponse Json?
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([status])
+}
