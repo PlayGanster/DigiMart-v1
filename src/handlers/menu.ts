@@ -46,6 +46,19 @@ export const moderationHandler = async (ctx: MyContext) => {
   await showModerationQueue(ctx, 1);
 };
 
+export const reviewModerationHandler = async (ctx: MyContext) => {
+  await ctx.answerCallbackQuery();
+  // Импортируем функцию showReviewQueue из reviewModeration.ts
+  const { showReviewQueue } = await import('./reviewModeration.js');
+  await showReviewQueue(ctx, 1);
+};
+
+export const mainMenuHandler = async (ctx: MyContext) => {
+  await ctx.answerCallbackQuery();
+  const { sendMainMenu } = await import('../utils/menu.js');
+  await sendMainMenu(ctx);
+};
+
 export const resetAccountHandler = async (ctx: MyContext) => {
   await ctx.answerCallbackQuery();
   try {
@@ -83,5 +96,7 @@ export function setupMenuHandlers(bot: Bot<MyContext>) {
   bot.callbackQuery('menu_my_products', myProductsHandler);
   bot.callbackQuery('menu_stats', statsHandler);
   bot.callbackQuery('menu_moderation', moderationHandler);
+  bot.callbackQuery('menu_review_moderation', reviewModerationHandler);
+  bot.callbackQuery('menu_main', mainMenuHandler);
   bot.callbackQuery('menu_reset_account', resetAccountHandler);
 }

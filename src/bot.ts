@@ -27,6 +27,8 @@ import {
   myProductsHandler,
   statsHandler,
   moderationHandler,
+  reviewModerationHandler,
+  mainMenuHandler,
   resetAccountHandler,
 } from './handlers/menu.js';
 
@@ -103,6 +105,8 @@ bot.use(async (ctx, next) => {
     case 'menu_my_products': return myProductsHandler(ctx);
     case 'menu_stats': return statsHandler(ctx);
     case 'menu_moderation': return moderationHandler(ctx);
+    case 'menu_review_moderation': return reviewModerationHandler(ctx);
+    case 'menu_main': return mainMenuHandler(ctx);
     case 'menu_reset_account': return resetAccountHandler(ctx);
   }
 
