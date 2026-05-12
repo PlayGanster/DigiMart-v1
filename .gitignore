@@ -1,30 +1,35 @@
-```
+```gitignore
 # Dependencies
 node_modules/
-.prisma/
 
-# Environment
+# Build outputs
+dist/
+build/
+*.js.map
+
+# Environment variables
 .env
 .env.local
 *.env.*
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.swp
 
-# Editors
+# Coverage reports
+coverage/
+.nyc_output/
+istanbul/
+
+# IDE files
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Build artifacts
-dist/
-build/
-target/
+# OS files
+.DS_Store
+Thumbs.db
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# TypeScript
+*.tsbuildinfo
 ```

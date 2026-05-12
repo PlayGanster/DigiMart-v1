@@ -29,7 +29,8 @@ export async function showReviewQueue(ctx: MyContext, page = 1) {
   });
 
   if (total === 0) {
-    await ctx.reply('✅ Все отзывы проверены.');
+    const keyboard = new InlineKeyboard().text('🔙 В главное меню', 'menu_main');
+    await ctx.reply('✅ Все отзывы проверены.', { reply_markup: keyboard });
     return;
   }
 
@@ -50,10 +51,11 @@ export async function showReviewQueue(ctx: MyContext, page = 1) {
     keyboard.text(`⚡ Отзыв #${review.id}`, `review_mod:select_${review.id}`).row();
   }
 
-  // Пагинация
+  // Пагинация и кнопка назад в меню
   if (page > 1) keyboard.text('⬅️ Назад', `review_mod_queue:page_${page - 1}`);
   keyboard.text(`${page}/${totalPages}`, 'review_mod_queue:noop');
   if (page < totalPages) keyboard.text('➡️ Вперёд', `review_mod_queue:page_${page + 1}`);
+  keyboard.row().text('🔙 В главное меню', 'menu_main');
 
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
 }
@@ -90,7 +92,9 @@ async function showReviewDetail(ctx: MyContext, reviewId: number) {
     .text('✅ Одобрить', `review_mod:approve_${review.id}`)
     .text('❌ Отклонить', `review_mod:reject_${review.id}`)
     .row()
-    .text('🔙 Назад к списку', 'review_mod:back_to_queue');
+    .text('🔙 Назад к списку', 'review_mod:back_to_queue')
+    .row()
+    .text('🔙 В главное меню', 'menu_main');
 
   try {
     await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });

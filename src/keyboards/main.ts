@@ -21,7 +21,8 @@ export function buildMainMenu(ctx: MyContext): InlineKeyboard {
   }
 
   if (role === 'ADMIN' || ctx.session.isAdmin) {
-    keyboard.text('🔍 Модерация', 'menu_moderation')
+    keyboard.text('🔍 Модерация товаров', 'menu_moderation')
+      .text('📝 Модерация отзывов', 'menu_review_moderation')
       .row();
   }
 
