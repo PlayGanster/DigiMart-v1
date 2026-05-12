@@ -1,7 +1,8 @@
 // src/handlers/statistics.ts
-import { Bot } from 'grammy';
+import { Bot, InlineKeyboard } from 'grammy';
 import { MyContext } from '../types.js';
 import prisma from '../prisma.js';
+import { sendOrEditMessage } from '../utils/messageManager.js';
 
 // Простой кэш: Map<magazineId, { data, timestamp }>
 const statsCache = new Map<number, { data: any; timestamp: number }>();
@@ -46,7 +47,7 @@ async function getMagazineStatistics(magazineId: number) {
     salesCount,
     revenue: revenueAgg._sum.priceAtPurchase ?? 0,
     avgRating: magazine?.avgRating ?? 0,
-    topProducts: topProducts.map((p) => ({
+    topProducts: topProducts.map((p: any) => ({
       name: p.name,
       sales: p._count.purchases,
     })),
@@ -86,14 +87,15 @@ export async function showStatistics(ctx: MyContext) {
 
   if (stats.topProducts.length > 0) {
     text += '🏆 <b>Топ-3 товара:</b>\n';
-    stats.topProducts.forEach((tp, idx) => {
+    stats.topProducts.forEach((tp: any, idx: number) => {
       text += `  ${idx + 1}. ${tp.name} — ${tp.sales} продаж\n`;
     });
   } else {
     text += '\nПока нет данных о продажах.';
   }
 
-  await ctx.reply(text, { parse_mode: 'HTML' });
+  const keyboard = new InlineKeyboard().text('🔙 В главное меню', 'menu_back');
+  await sendOrEditMessage(ctx, text, { parse_mode: 'HTML', reply_markup: keyboard });
 }
 
 /**

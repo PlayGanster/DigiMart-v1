@@ -252,7 +252,7 @@ export function setupModerationHandlers(bot: Bot<MyContext>) {
       } catch {}
     } else {
       // Отклонение или правки — сохраняем данные и запускаем conversation
-      ctx.session.tempModeration = { productId, action };
+      ctx.session.tempModeration = { productId, action: action as 'reject' | 'revise' };
       await ctx.answerCallbackQuery();
       await ctx.conversation.enter('moderationReason');
     }

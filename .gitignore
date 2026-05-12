@@ -1,0 +1,59 @@
+```
+# Build artifacts
+dist/
+
+# Dependencies
+node_modules/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled JavaScript/CSS
+*.js.map
+*.d.ts
+*.d.ts.map
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# IDE specific
+*.swp
+*.swo
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Testing
+.nyc_output/
+coverage/
+
+# Distribution / packaging
+*.tar.gz
+*.whl
+*.egg-info/
+
+# Local configuration
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+```
